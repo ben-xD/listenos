@@ -1,0 +1,28 @@
+name = "listenos"
+account_id = ""
+compatibility_date = "2022-03-25"
+compatibility_flags = [ "durable_object_fetch_allows_relative_url" ]
+main = "dist/index.mjs"
+
+[build]
+command = "npm install && npm run build"
+
+[env.staging]
+workers_dev = true
+vars = { ENVIRONMENT = "staging" }
+durable_objects.bindings = [
+    { name = "SESSION", class_name = "SessionDurableObject" },
+]
+kv_namespaces = [
+    { binding = "SESSIONS", id = "" }
+]
+
+[env.production]
+workers_dev = true
+vars = { ENVIRONMENT = "production" }
+durable_objects.bindings = [
+    { name = "SESSION", class_name = "SessionDurableObject" },
+]
+kv_namespaces = [
+    { binding = "SESSIONS", id = "" }
+]

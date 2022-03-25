@@ -1,0 +1,8 @@
+dist
+node_modules
+transpiled
+/.idea/
+idea
+
+# sensitive credentials
+wrangler.toml
