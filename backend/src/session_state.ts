@@ -8,8 +8,7 @@ import {
     SessionDeleted,
     SyncEvent
 } from "./types";
-import {v4 as uuidv4} from "uuid";
-import {CreateAnswerRequestBody, CreateQuestionRequestBody, CreateSessionRequestBody} from "./request_validators";
+import {CreateAnswerRequestBody, CreateQuestionRequestBody, CreateSessionRequestBody} from "./schema";
 
 export class SessionState {
     private readonly storage: DurableObjectStorage;
@@ -24,6 +23,7 @@ export class SessionState {
     }
 
     async deleteSession(): Promise<void> {
+        console.info("Deleting durable object data")
         await this.storage.deleteAll()
         const id = await this.storage.get<string>("id")
         if (id === undefined) {
@@ -36,10 +36,12 @@ export class SessionState {
         this.onEvent({type: EventType.SessionDeleted, payload: body})
     }
 
+    // TODO replace user provided IDs with UUID
     async createQuestion(body: CreateQuestionRequestBody): Promise<void> {
+        const session_id = await this.getSessionId()
         const question: Question = {
             text: body.text,
-            id: uuidv4(),
+            id: body.id,
             createdAt: new Date(),
             answers: [],
             author: body.author
@@ -56,16 +58,16 @@ export class SessionState {
     }
 
     async createAnswer(body: CreateAnswerRequestBody): Promise<void> {
+        const session_id = await this.getSessionId()
         const answer: Answer = {
             text: body.text,
-            id: uuidv4(),
+            id: body.id,
             createdAt: new Date(),
             author: body.author
         }
         const question = await this.getQuestion(body.question_id)
         question.answers.push(answer)
         await this.saveQuestion(question)
-        const session_id = await this.getSessionId()
         const payload: NewAnswerEvent = {
             createdAt: answer.createdAt,
             author: answer.author,
@@ -81,10 +83,11 @@ export class SessionState {
     }
 
     async getSnapshot(): Promise<Session> {
+        console.log("Getting Session snapshot")
         const id = await this.storage.get<string>("id")
         const author = await this.storage.get<string>("author")
         const createdAt = await this.storage.get<Date>("createdAt")
-        const questionIds = await this.storage.get<string[]>("questionIds")
+        const questionIds = await this.storage.get<Set<string>>("questionIds")
         if (id === undefined || author === undefined || createdAt == undefined || questionIds === undefined) {
             throw Error("Illegal state. Initial session metadata not set.")
         }
@@ -111,7 +114,7 @@ export class SessionState {
         await this.storage.put("id", id)
         await this.storage.put("createdAt", new Date())
         await this.storage.put("author", body.author)
-        await this.storage.put("questionIds", [])
+        await this.storage.put("questionIds", new Set())
     }
 
     private async getQuestion(id: string): Promise<Question> {
@@ -123,8 +126,9 @@ export class SessionState {
     }
 
     private async saveQuestion(question: Question): Promise<void> {
-        const questionIds = await this.storage.get<string[]>("questionIds")
-        questionIds?.push(question.id)
+        const questionIds = await this.storage.get<Set<string>>("questionIds")
+        console.log(questionIds instanceof Set)
+        questionIds?.add(question.id)
         await this.storage.put("questionIds", questionIds)
         await this.storage.put(question.id, question)
     }

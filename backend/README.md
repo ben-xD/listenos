@@ -4,7 +4,16 @@ A batteries included template for kick starting a TypeScript Cloudflare worker p
 
 ## Note: You must use [wrangler](https://developers.cloudflare.com/workers/cli-wrangler/install-update) 1.17 or newer to use this template.
 
-## Getting started
+## Running
+
+- This application is deployed at:
+  - production: https://listenos-production.benz.workers.dev/
+  - staging: https://listenos-staging.listenos.benz.workers.dev/
+
+
+## Contributing
+
+### Getting started
 
 - Oops, workers KV is really slow. 10+ seconds for data to be available, even for the same location which wrote the data. KV is eventually consistent. Also, see https://community.cloudflare.com/t/how-truly-slow-is-workers-kv/218196
 - Never use Workers KV. You have to use Durable objects for storing lists of documents (other durable objects).
